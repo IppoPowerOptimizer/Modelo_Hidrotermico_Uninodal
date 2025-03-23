@@ -1,0 +1,314 @@
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 1
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+C o m p i l a t i o n
+
+
+   1   
+   2  *==============================================================
+   3  ****************************************************************
+   4  *********MODELO HIDROTERMICO UNINODAL***************************
+   5  ****************************************************************
+   6  *==============================================================
+   7   
+   8  *==============================================================
+   9  ****************************************************************
+  10  *************HAYRO ANTHONY PUMALLOCLLA CASTILLA*****************
+  11  ****************************************************************
+  12  *==============================================================
+  13   
+  14  *Declaracion de conjuntos
+  15  Sets
+  16   
+  17  gt      Generadores térmicos    /gt1/
+  18  gh      Generadores hidro       /gh1/
+  19  t       periodos                /t1*t3/
+  20  pargt   Parámetros de hidro     /Pmin, Pmax, c/
+  21  pargh   Parámetros de termicas  /Pmin, Pmax, ci/
+  22  ;
+  23   
+  24  table
+  25  Datahidro
+  26          Pmin    Pmax    c
+  27  gh1      0      450     0.8
+  28  ;
+  29   
+  30  Table
+  31  Dataterm
+  32         Pmin     Pmax    ci
+  33  gt1    0        600     5
+  34  ;
+  35   
+  36  Parameters
+  37   
+  38  period(t) Horas por bloque
+  39  /
+  40  t1      8
+  41  t2      10
+  42  t3      6
+  43  /
+  44   
+  45  dem(t) Demanda por cada bloque
+  46  /
+  47  t1      350
+  48  t2      700
+  49  t3      500
+  50  /
+  51   
+  52  meta(gh) consumo de agua diario
+  53  /
+  54  gh1     1.5
+  55  /
+  56  ;
+  57   
+  58  Variables
+  59   
+  60  C_gt        Costo de operacion
+  61  pt(gt,t)    Potencia generada por la central termica por bloque horario
+  62  ph(gh,t)    Potencia generada por la central hidro por bloque horario
+  63  ;
+  64   
+  65  Scalar
+  66   
+  67  c_rac       Coste de racionamiento
+  68  /8000/
+  69  ;
+  70   
+  71  Positive Variable
+  72  raci(t)     racionamiento
+  73  ;
+  74  pt.lo(gt,t) = Dataterm(gt, 'Pmin');
+  75  pt.up(gt,t) = Dataterm(gt, 'Pmax');
+  76  ph.lo(gh,t) = Datahidro(gh,'Pmin');
+  77  ph.up(gh,t) = Datahidro(gh,'Pmax');
+  78   
+  79  Equations
+  80   
+  81  FO          Funcion objetivo
+  82  BE(t)       Balance energetico
+  83  BH(gh)      Balance de volumen de agua
+  84  ;
+  85   
+  86   
+  87  FO..    C_gt =e= sum(t, sum(gt, Dataterm(gt, 'ci') * pt(gt,t)) * period(t)) + sum(t, raci(t) * c_rac* period(t)) ;
+  88  BE(t).. (sum(gt, pt(gt, t)) + sum(gh, ph(gh, t)) + raci(t)) * period(t)  =e= dem(t)* period(t) ;
+  89  BH(gh).. Sum(t, Datahidro(gh, 'c') * ph(gh,t) * period(t)) * 3600 =l= meta(gh) * power(10, 6);
+  90   
+  91  Model MHU /all/;
+  92   
+  93  Solve MHU using lp minimizing C_gt ;
+
+
+COMPILATION TIME     =        0.016 SECONDS      3 MB  48.6.0 f19e462d WEX-WEI
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 2
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Equation Listing    SOLVE MHU Using LP From line 93
+
+
+---- FO  =E=  Funcion objetivo
+
+FO..  C_gt - 40*pt(gt1,t1) - 50*pt(gt1,t2) - 30*pt(gt1,t3) - 64000*raci(t1) - 80000*raci(t2) - 48000*raci(t3) =E= 0 ; (LHS = 0)
+     
+
+---- BE  =E=  Balance energetico
+
+BE(t1)..  8*pt(gt1,t1) + 8*ph(gh1,t1) + 8*raci(t1) =E= 2800 ; (LHS = 0, INFES = 2800 ****)
+     
+BE(t2)..  10*pt(gt1,t2) + 10*ph(gh1,t2) + 10*raci(t2) =E= 7000 ; (LHS = 0, INFES = 7000 ****)
+     
+BE(t3)..  6*pt(gt1,t3) + 6*ph(gh1,t3) + 6*raci(t3) =E= 3000 ; (LHS = 0, INFES = 3000 ****)
+     
+
+---- BH  =L=  Balance de volumen de agua
+
+BH(gh1)..  23040*ph(gh1,t1) + 28800*ph(gh1,t2) + 17280*ph(gh1,t3) =L= 1500000 ; (LHS = 0)
+     
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 3
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Column Listing      SOLVE MHU Using LP From line 93
+
+
+---- C_gt  Costo de operacion
+
+C_gt
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       FO
+
+
+---- pt  Potencia generada por la central termica por bloque horario
+
+pt(gt1,t1)
+                (.LO, .L, .UP, .M = 0, 0, 600, 0)
+      -40       FO
+        8       BE(t1)
+
+pt(gt1,t2)
+                (.LO, .L, .UP, .M = 0, 0, 600, 0)
+      -50       FO
+       10       BE(t2)
+
+pt(gt1,t3)
+                (.LO, .L, .UP, .M = 0, 0, 600, 0)
+      -30       FO
+        6       BE(t3)
+
+
+---- ph  Potencia generada por la central hidro por bloque horario
+
+ph(gh1,t1)
+                (.LO, .L, .UP, .M = 0, 0, 450, 0)
+        8       BE(t1)
+    23040       BH(gh1)
+
+ph(gh1,t2)
+                (.LO, .L, .UP, .M = 0, 0, 450, 0)
+       10       BE(t2)
+    28800       BH(gh1)
+
+ph(gh1,t3)
+                (.LO, .L, .UP, .M = 0, 0, 450, 0)
+        6       BE(t3)
+    17280       BH(gh1)
+
+
+---- raci  racionamiento
+
+raci(t1)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+   -64000       FO
+        8       BE(t1)
+
+raci(t2)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+   -80000       FO
+       10       BE(t2)
+
+raci(t3)
+                (.LO, .L, .UP, .M = 0, 0, +INF, 0)
+   -48000       FO
+        6       BE(t3)
+
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 4
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Range Statistics    SOLVE MHU Using LP From line 93
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 2.800E+03, 1.500E+06] - Zero values observed as well
+Bound     [min, max] : [ 4.500E+02, 6.000E+02] - Zero values observed as well
+Matrix    [min, max] : [ 1.000E+00, 8.000E+04]
+
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 5
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Model Statistics    SOLVE MHU Using LP From line 93
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           3     SINGLE EQUATIONS            5
+BLOCKS OF VARIABLES           4     SINGLE VARIABLES           10
+NON ZERO ELEMENTS            19
+
+
+GENERATION TIME      =        0.172 SECONDS      4 MB  48.6.0 f19e462d WEX-WEI
+GAMS 48.6.0  f19e462d Jan 9, 2025           WEX-WEI x86 64bit/MS Windows - 03/22/25 21:40:34 Page 6
+G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+Solution Report     SOLVE MHU Using LP From line 93
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   MHU                 OBJECTIVE  C_gt
+     TYPE    LP                  DIRECTION  MINIMIZE
+     SOLVER  CPLEX               FROM LINE  93
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      1 Optimal
+**** OBJECTIVE VALUE          3892333.3333
+
+ RESOURCE USAGE, LIMIT          0.000 10000000000.000
+ ITERATION COUNT, LIMIT         2    2147483647
+*** This solver runs with a community license. No commercial use.
+--- GMO setup time: 0.00s
+--- GMO memory 0.50 Mb (peak 0.50 Mb)
+--- Dictionary memory 0.00 Mb
+--- Cplex 22.1.1.0 link memory 0.00 Mb (peak 0.00 Mb)
+--- Starting Cplex
+
+
+--- LP status (1): optimal.
+--- Cplex Time: 0.00sec (det. 0.01 ticks)
+
+
+Optimal solution found
+Objective:      3892333.333333
+
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU FO                  .              .              .             1.0000      
+
+  FO  Funcion objetivo
+
+---- EQU BE  Balance energetico
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+t1      2800.0000      2800.0000      2800.0000         5.0000      
+t2      7000.0000      7000.0000      7000.0000      8000.0000      
+t3      3000.0000      3000.0000      3000.0000         5.0000      
+
+---- EQU BH  Balance de volumen de agua
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+gh1        -INF      1500000.0000   1500000.0000        -2.7778      
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR C_gt              -INF      3892333.3333        +INF             .          
+
+  C_gt  Costo de operacion
+
+---- VAR pt  Potencia generada por la central termica por bloque horario
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+gt1.t1          .           350.0000       600.0000          .          
+gt1.t2          .           600.0000       600.0000    -79950.0000      
+gt1.t3          .           500.0000       600.0000          .          
+
+---- VAR ph  Potencia generada por la central hidro por bloque horario
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+gh1.t1          .              .           450.0000     63960.0000      
+gh1.t2          .            52.0833       450.0000          .          
+gh1.t3          .              .           450.0000     47970.0000      
+
+---- VAR raci  racionamiento
+
+          LOWER          LEVEL          UPPER         MARGINAL
+
+t1          .              .            +INF        63960.0000      
+t2          .            47.9167        +INF             .          
+t3          .              .            +INF        47970.0000      
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+
+
+EXECUTION TIME       =        0.468 SECONDS      4 MB  48.6.0 f19e462d WEX-WEI
+
+
+USER: Academic User                                  G250115+0003Ac-GEN
+      150139@unsaac.edu.pe                                    CLA105782
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      C:\Users\hayro\Desktop\Gams practica\ejercicios del manual\modelos matematicos\Mod_Hidro_Uni.gms
+Output     C:\Users\hayro\Desktop\Gams practica\ejercicios del manual\modelos matematicos\Mod_Hidro_Uni.lst
